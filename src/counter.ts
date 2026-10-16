@@ -46,12 +46,6 @@ shieldEvents.addEventListener("shield-changed", (event) => {
   drawMeter((event as CustomEvent<ShieldSnapshot>).detail);
 });
 
-function updateStats(shield: ShieldSnapshot) {
-  panelUpdates++;
-  diagnostic.textContent = `Inspector deliveries: ${panelUpdates}`;
-  renderStats(shield);
-}
-
 function renderStats(shield: ShieldSnapshot) {
   if (!panel) return;
   panel.textContent =
@@ -68,7 +62,12 @@ function setCount(next: number) {
       detail: shield,
     }),
   );
-  if (panel) updateStats(shield);
+}
+
+function onShieldChanged(event: Event) {
+  panelUpdates++;
+  diagnostic.textContent = `Inspector deliveries: ${panelUpdates}`;
+  renderStats((event as CustomEvent<ShieldSnapshot>).detail);
 }
 
 document.querySelector<HTMLButtonElement>("#counter-less")!.onclick = () => {
@@ -85,9 +84,11 @@ document.querySelector<HTMLButtonElement>("#counter-open")!.onclick = () => {
   panel = document.createElement("p");
   host.append(panel);
   renderStats(takeSnapshot());
+  shieldEvents.addEventListener("shield-changed", onShieldChanged);
 };
 document.querySelector<HTMLButtonElement>("#counter-close")!.onclick = () => {
   if (!panel) return;
+  shieldEvents.removeEventListener("shield-changed", onShieldChanged);
   panel.remove();
   panel = null;
 };
