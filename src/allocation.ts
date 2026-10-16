@@ -7,10 +7,10 @@ const readout = document.querySelector<HTMLParagraphElement>(
 )!;
 
 const crewTotal = 6;
-const startingcrewOnSupplies = 2;
+const startingCrewOnSupplies = 2;
 const suppliesPerProducer = 3;
 const suppliesPerCrewmember = 1;
-let crewOnSupplies = startingcrewOnSupplies;
+let crewOnSupplies = startingCrewOnSupplies;
 
 interface ShiftResult {
   crewOnSupplies: number;
@@ -18,6 +18,42 @@ interface ShiftResult {
   suppliesProduced: number;
   suppliesConsumed: number;
   balance: number;
+}
+
+interface ReportRow {
+  label: string;
+  color: string;
+  value: (shift: ShiftResult) => number;
+}
+
+const reportRows: ReportRow[] = [
+  {
+    label: "Production",
+    color: "#27766b",
+    value: (shift) => shift.suppliesProduced,
+  },
+  {
+    label: "Consumption",
+    color: "#a44d23",
+    value: (shift) => shift.suppliesConsumed,
+  },
+];
+
+const firstRowY = 102;
+const rowSpacing = 52;
+const barOffsetY = 8;
+const barScale = 14;
+
+function drawReportRows(shift: ShiftResult) {
+  reportRows.forEach((row, index) => {
+    const labelY = firstRowY + index * rowSpacing;
+    const amount = row.value(shift);
+    ctx.fillStyle = "#233e43";
+    ctx.font = "14px system-ui";
+    ctx.fillText(`${row.label}: ${amount}`, 18, labelY);
+    ctx.fillStyle = row.color;
+    ctx.fillRect(18, labelY + barOffsetY, amount * barScale, 20);
+  });
 }
 
 function calculateShift(crewOnSupplies: number): ShiftResult {
@@ -45,9 +81,6 @@ function drawCrewRoster(shift: ShiftResult) {
     ctx.font = "16px system-ui";
     ctx.fillText(String(i + 1), 31 + i * 45, 40);
   }
-}
-
-function drawProductionRow(shift: ShiftResult) {
   ctx.fillStyle = "#233e43";
   ctx.font = "14px system-ui";
   ctx.fillText(
@@ -55,16 +88,6 @@ function drawProductionRow(shift: ShiftResult) {
     18,
     76,
   );
-  ctx.fillText(`Production: ${shift.suppliesProduced}`, 18, 102);
-  ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, shift.suppliesProduced * 14, 20);
-}
-
-function drawConsumptionRow(shift: ShiftResult) {
-  ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${shift.suppliesConsumed}`, 18, 154);
-  ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, shift.suppliesConsumed * 14, 20);
 }
 
 function renderText(shift: ShiftResult) {
@@ -78,8 +101,7 @@ function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const shift = calculateShift(crewOnSupplies);
   drawCrewRoster(shift);
-  drawProductionRow(shift);
-  drawConsumptionRow(shift);
+  drawReportRows(shift);
   renderText(shift);
 }
 
@@ -96,6 +118,6 @@ document.querySelector<HTMLButtonElement>("#allocation-more")!.onclick = () => {
 };
 document.querySelector<HTMLButtonElement>("#allocation-reset")!.onclick =
   () => {
-    setCrewOnSupplies(startingcrewOnSupplies);
+    setCrewOnSupplies(startingCrewOnSupplies);
   };
 update();
