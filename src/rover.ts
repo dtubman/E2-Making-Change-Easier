@@ -4,6 +4,47 @@ const canvas = document.querySelector<HTMLCanvasElement>("#rover-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>("#rover-readout")!;
 
+const queueStatus = document.querySelector<HTMLParagraphElement>(
+  "#rover-queue-status",
+)!;
+
+const pending: Command[] = [];
+const pendingList = document.querySelector<HTMLOListElement>("#rover-pending")!;
+const runButton = document.querySelector<HTMLButtonElement>("#rover-run")!;
+const clearButton = document.querySelector<HTMLButtonElement>("#rover-clear")!;
+
+function renderPending() {
+  pendingList.replaceChildren();
+  for (const command of pending) {
+    const item = document.createElement("li");
+    item.textContent = command.label;
+    pendingList.append(item);
+  }
+  runButton.disabled = false;
+  clearButton.disabled = false;
+  queueStatus.textContent = pending.length === 0
+    ? "Empty"
+    : `${pending.length} pending`;
+}
+
+function enqueue(command: Command) {
+  pending.push(command);
+  renderPending();
+}
+
+function runPending() {
+  while (pending.length > 0) pending.shift()!.execute();
+  renderPending();
+}
+
+function clearPending() {
+  pending.length = 0;
+  renderPending();
+}
+
+runButton.onclick = runPending;
+clearButton.onclick = clearPending;
+
 interface Direction {
   name: string;
   dx: number;
@@ -70,16 +111,12 @@ interface Command {
 const forwardCommand: Command = { label: "Forward", execute: moveForward };
 const rightCommand: Command = { label: "Right", execute: turnRight };
 
-function runNow(command: Command) {
-  command.execute();
-}
-
 document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () => {
-  runNow(forwardCommand);
+  enqueue(forwardCommand);
 };
 
 document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
-  runNow(rightCommand);
+  enqueue(rightCommand);
 };
 
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
@@ -87,5 +124,7 @@ document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   y = 2;
   directionIndex = 0;
   drawRover();
+  clearPending();
 };
 drawRover();
+renderPending();
