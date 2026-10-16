@@ -7,26 +7,38 @@ const readout = document.querySelector<HTMLParagraphElement>(
 )!;
 
 const crewTotal = 6;
-const startingCrewWorking = 2;
+const startingcrewOnSupplies = 2;
 const suppliesPerProducer = 3;
 const suppliesPerCrewmember = 1;
-let crewWorking = startingCrewWorking;
+let crewOnSupplies = startingcrewOnSupplies;
 
-function calculateSuppliesProduced(): number {
-  return crewWorking * suppliesPerProducer;
+interface ShiftResult {
+  crewOnSupplies: number;
+  crewTotal: number;
+  suppliesProduced: number;
+  suppliesConsumed: number;
+  balance: number;
 }
 
-function calculateSuppliesConsumed(): number {
-  return crewTotal * suppliesPerCrewmember;
+function calculateShift(crewOnSupplies: number): ShiftResult {
+  const suppliesProduced = crewOnSupplies * suppliesPerProducer;
+  const suppliesConsumed = crewTotal * suppliesPerCrewmember;
+  return {
+    crewOnSupplies,
+    crewTotal,
+    suppliesProduced,
+    suppliesConsumed,
+    balance: suppliesProduced - suppliesConsumed,
+  };
 }
 
 function formatBalance(balance: number): string {
   return `${balance > 0 ? "+" : ""}${balance}`;
 }
 
-function drawCrewRoster() {
-  for (let i = 0; i < crewTotal; i++) {
-    const onSupplies = i < crewWorking;
+function drawCrewRoster(shift: ShiftResult) {
+  for (let i = 0; i < shift.crewTotal; i++) {
+    const onSupplies = i < shift.crewOnSupplies;
     ctx.fillStyle = onSupplies ? "#27766b" : "#c9d2c9";
     ctx.fillRect(18 + i * 45, 16, 36, 36);
     ctx.fillStyle = onSupplies ? "#ffffff" : "#233e43";
@@ -35,53 +47,55 @@ function drawCrewRoster() {
   }
 }
 
-function drawProductionRow(production: number) {
+function drawProductionRow(shift: ShiftResult) {
   ctx.fillStyle = "#233e43";
   ctx.font = "14px system-ui";
-  ctx.fillText(`Producers: ${crewWorking} / ${crewTotal}`, 18, 76);
-  ctx.fillText(`Production: ${production}`, 18, 102);
+  ctx.fillText(
+    `Producers: ${shift.crewOnSupplies} / ${shift.crewTotal}`,
+    18,
+    76,
+  );
+  ctx.fillText(`Production: ${shift.suppliesProduced}`, 18, 102);
   ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, production * 14, 20);
+  ctx.fillRect(18, 110, shift.suppliesProduced * 14, 20);
 }
 
-function drawConsumptionRow(consumption: number) {
+function drawConsumptionRow(shift: ShiftResult) {
   ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${consumption}`, 18, 154);
+  ctx.fillText(`Consumption: ${shift.suppliesConsumed}`, 18, 154);
   ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, consumption * 14, 20);
+  ctx.fillRect(18, 162, shift.suppliesConsumed * 14, 20);
 }
 
-function renderText(production: number, consumption: number, balance: number) {
+function renderText(shift: ShiftResult) {
   readout.textContent =
-    `Assigned: ${crewWorking}/crewTotal · Production: ${production} · Consumption: ${consumption} · Balance: ${
-      formatBalance(balance)
+    `Assigned: ${shift.crewOnSupplies}/${shift.crewTotal} · Production: ${shift.suppliesProduced} · Consumption: ${shift.suppliesConsumed} · Balance: ${
+      formatBalance(shift.balance)
     }`;
 }
 
 function update() {
-  const suppliesProduced = calculateSuppliesProduced();
-  const suppliesConsumed = calculateSuppliesConsumed();
-  const balance = suppliesProduced - suppliesConsumed;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawCrewRoster();
-  drawProductionRow(suppliesProduced);
-  drawConsumptionRow(suppliesConsumed);
-  renderText(suppliesProduced, suppliesConsumed, balance);
+  const shift = calculateShift(crewOnSupplies);
+  drawCrewRoster(shift);
+  drawProductionRow(shift);
+  drawConsumptionRow(shift);
+  renderText(shift);
 }
 
-function setProducersWorking(next: number) {
-  crewWorking = Math.min(crewTotal, Math.max(0, next));
+function setCrewOnSupplies(next: number) {
+  crewOnSupplies = Math.min(crewTotal, Math.max(0, next));
   update();
 }
 
 document.querySelector<HTMLButtonElement>("#allocation-less")!.onclick = () => {
-  setProducersWorking(crewWorking - 1);
+  setCrewOnSupplies(crewOnSupplies - 1);
 };
 document.querySelector<HTMLButtonElement>("#allocation-more")!.onclick = () => {
-  setProducersWorking(crewWorking + 1);
+  setCrewOnSupplies(crewOnSupplies + 1);
 };
 document.querySelector<HTMLButtonElement>("#allocation-reset")!.onclick =
   () => {
-    setProducersWorking(startingCrewWorking);
+    setCrewOnSupplies(startingcrewOnSupplies);
   };
 update();
