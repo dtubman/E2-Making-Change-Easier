@@ -8,6 +8,11 @@ let x = 2;
 let y = 2;
 let direction = 0;
 
+interface Command {
+  label: string;
+  execute(): void;
+}
+
 function drawRover() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = "#718881";
@@ -32,17 +37,34 @@ function drawRover() {
   }`;
 }
 
-document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () => {
+function moveForward() {
   if (direction === 0) y = Math.max(0, y - 1);
   if (direction === 1) x = Math.min(4, x + 1);
   if (direction === 2) y = Math.min(4, y + 1);
   if (direction === 3) x = Math.max(0, x - 1);
   drawRover();
-};
-document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
+}
+
+function turnRight() {
   direction = (direction + 1) % 4;
   drawRover();
+}
+
+const forwardCommand: Command = { label: "Forward", execute: moveForward };
+const rightCommand: Command = { label: "Right", execute: turnRight };
+
+function runNow(command: Command) {
+  command.execute();
+}
+
+document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () => {
+  runNow(forwardCommand);
 };
+
+document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
+  runNow(rightCommand);
+};
+
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   x = 2;
   y = 2;
