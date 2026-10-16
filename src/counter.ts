@@ -21,6 +21,8 @@ interface ShieldSnapshot {
 
 const shieldCapacity = 10;
 
+const shieldEvents = new EventTarget();
+
 function takeSnapshot(): ShieldSnapshot {
   return {
     charge: count,
@@ -40,6 +42,9 @@ function drawMeter(shield: ShieldSnapshot) {
   ctx.fillText(`${shield.charge} / ${shield.capacity} shield`, 12, 100);
   readout.textContent = `Shield charge: ${shield.charge} / ${shield.capacity}`;
 }
+shieldEvents.addEventListener("shield-changed", (event) => {
+  drawMeter((event as CustomEvent<ShieldSnapshot>).detail);
+});
 
 function updateStats(shield: ShieldSnapshot) {
   panelUpdates++;
@@ -58,7 +63,11 @@ function setCount(next: number) {
   if (bounded === count) return;
   count = bounded;
   const shield = takeSnapshot();
-  drawMeter(shield);
+  shieldEvents.dispatchEvent(
+    new CustomEvent<ShieldSnapshot>("shield-changed", {
+      detail: shield,
+    }),
+  );
   if (panel) updateStats(shield);
 }
 
